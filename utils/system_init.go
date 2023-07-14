@@ -1,5 +1,7 @@
 package utils
 
+//配置一些初始化的地方
+
 //viper库用于处理配置文件的加载和解析
 import (
 	"fmt"
@@ -9,8 +11,6 @@ import (
 )
 
 var DB *gorm.DB
-
-//配置一些初始化的地方
 
 // 初始化去取得config文件夹中的app.yml文件中存储的数据库配置
 func InitConfig() {
