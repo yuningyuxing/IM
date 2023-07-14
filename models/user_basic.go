@@ -46,3 +46,18 @@ func GetUserList() []*UserBasic {
 	utils.DB.Find(&data)
 	return data
 }
+
+// 在数据库中创建用户
+func CreateUser(user UserBasic) *gorm.DB {
+	return utils.DB.Create(&user)
+}
+
+// 在数据库中删除用户
+func DeleteUser(user UserBasic) *gorm.DB {
+	return utils.DB.Delete(&user)
+}
+
+// 在数据库中更新用户
+func UpdateUser(user UserBasic) *gorm.DB {
+	return utils.DB.Model(&user).Updates(UserBasic{Name: user.Name, PassWord: user.PassWord})
+}
