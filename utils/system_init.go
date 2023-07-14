@@ -8,6 +8,10 @@ import (
 	"github.com/spf13/viper"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
+	"log"
+	"os"
+	"time"
 )
 
 var DB *gorm.DB
@@ -29,5 +33,20 @@ func InitConfig() {
 
 // 初始化数据库
 func InitMysql() {
-	DB, _ = gorm.Open(mysql.Open(viper.GetString("mysql.dns")), &gorm.Config{})
+	//newLogger 自定义地日志记录器 用于打印SQL语句和数据库操作地日志
+	//logger.New是gorm库中地函数 用于创建一个新地日志记录器
+	newLogger := logger.New(
+		//log.New是Go标准库中的函数 用于创建一个新的日志记录器
+		//下面的第二个参数用于设置日志的换行格式 log.LstdFlags是一个log包中的常量 用于设置日志的格式
+		log.New(os.Stdout, "\r\n", log.LstdFlags),
+		logger.Config{
+			SlowThreshold: time.Second, //慢SQL阈值
+			LogLevel:      logger.Info, //级别
+			Colorful:      true,        //彩色
+		},
+	)
+
+	//gorm.config是gorm库中的一个配置对象 用于设置数据库连接的配置 其中Logger属性被设置为之前创建的newLogger
+	DB, _ = gorm.Open(mysql.Open(viper.GetString("mysql.dns")),
+		&gorm.Config{Logger: newLogger})
 }
