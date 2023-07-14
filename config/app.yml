@@ -1,0 +1,3 @@
+#yml文件常用于存储配置信息 yml包含项目的各种配置选项 如数据库连接信息，服务器配置，日志设置等
+mysql:
+  dns: root:20020902=QWer@tcp(127.0.0.1:3306)/ginchat?charset=utf8mb4&parseTime=True&loc=Local

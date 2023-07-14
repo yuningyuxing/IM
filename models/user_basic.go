@@ -1,7 +1,10 @@
 package models
 
 //model文件夹用来描述我们要操作的对象
-import "gorm.io/gorm"
+import (
+	"gorm.io/gorm"
+	"main/utils"
+)
 
 // 表示某个用户的信息 用于和数据库关联
 type UserBasic struct {
@@ -36,4 +39,10 @@ type UserBasic struct {
 // 给实体绑定一个方法
 func (table *UserBasic) TableName() string {
 	return "user_basic"
+}
+
+func GetUserList() []*UserBasic {
+	data := make([]*UserBasic, 10)
+	utils.DB.Find(&data)
+	return data
 }
