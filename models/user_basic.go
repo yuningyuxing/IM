@@ -14,16 +14,18 @@ type UserBasic struct {
 	Name string
 	//用户密码
 	PassWord string
-	//用户电话
-	Phone string
-	//用户邮箱
-	Email string
+	//用户电话  下面这个是正则表达式
+	Phone string `valid;"matches(^1[3-9]{1}\\d{9}$)"`
+	//用户邮箱   valid是govalidator库中用来校验邮箱格式是否正确的
+	Email string `valid:"email"`
 	//用户身份?
 	Identity string
 	//用户IP
 	ClientIp string
 	//用户端口
 	ClientPort string
+	//盐值
+	Salt string
 	//用户登录时间
 	LoginTime uint64
 	//用户心跳时间
@@ -59,5 +61,27 @@ func DeleteUser(user UserBasic) *gorm.DB {
 
 // 在数据库中更新用户
 func UpdateUser(user UserBasic) *gorm.DB {
-	return utils.DB.Model(&user).Updates(UserBasic{Name: user.Name, PassWord: user.PassWord})
+	return utils.DB.Model(&user).
+		Updates(UserBasic{Name: user.Name, PassWord: user.PassWord, Phone: user.Phone, Email: user.Email})
+}
+
+// 通过名字去寻找用户
+func FindUserByName(name string) UserBasic {
+	user := UserBasic{}
+	utils.DB.Where("name = ?", name).First(&user)
+	return user
+}
+
+// 通过电话去寻找用户
+func FindUserByPhone(phone string) UserBasic {
+	user := UserBasic{}
+	utils.DB.Where("phone = ?", phone).First(&user)
+	return user
+}
+
+// 通过邮箱去寻找用户
+func FindUserByEmail(email string) UserBasic {
+	user := UserBasic{}
+	utils.DB.Where("email = ?", email).First(&user)
+	return user
 }

@@ -131,6 +131,18 @@ const docTemplate = `{
                         "description": "password",
                         "name": "password",
                         "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "phone",
+                        "name": "phone",
+                        "in": "formData"
+                    },
+                    {
+                        "type": "string",
+                        "description": "email",
+                        "name": "email",
+                        "in": "formData"
                     }
                 ],
                 "responses": {

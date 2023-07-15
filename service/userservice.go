@@ -1,8 +1,12 @@
 package service
 
 import (
+	"fmt"
+	"github.com/asaskevich/govalidator"
 	"github.com/gin-gonic/gin"
 	"main/models"
+	"main/utils"
+	"math/rand"
 	"net/http"
 	"strconv"
 )
@@ -40,6 +44,17 @@ func CreateUser(c *gin.Context) {
 	user.Name = c.Query("name")
 	password := c.Query("password")
 	repassword := c.Query("repassword")
+
+	//设置盐值 随机数
+	salt := fmt.Sprintf("%06d", rand.Int31())
+
+	data := models.FindUserByName(user.Name)
+	if data.Name != "" {
+		c.JSON(-1, gin.H{
+			"message": "用户名已注册!",
+		})
+		return
+	}
 	//判断密码
 	if password != repassword {
 		c.JSON(-1, gin.H{
@@ -47,7 +62,7 @@ func CreateUser(c *gin.Context) {
 		})
 		return
 	}
-	user.PassWord = password
+	user.PassWord = utils.MakePassword(password, salt)
 	//去数据库创建用户
 	models.CreateUser(user)
 	c.JSON(200, gin.H{
@@ -78,15 +93,31 @@ func DeleteUser(c *gin.Context) {
 // @param id formData string false "id"
 // @param name formData string false "name"
 // @param password formData string false "password"
+// @param phone formData string false "phone"
+// @param email formData string false "email"
 // @Success 200 {string} json{"code","message"}
 // @Router /user/updateUser [post]
 func UpdateUser(c *gin.Context) {
 	//更新  根据ID
 	user := models.UserBasic{}
+	//注意PostForm得到的是string 需要转化成int 然后再转化成uint
 	id, _ := strconv.Atoi(c.PostForm("id"))
 	user.ID = uint(id)
 	user.Name = c.PostForm("name")
 	user.PassWord = c.PostForm("password")
+	user.Phone = c.PostForm("phone")
+	user.Email = c.PostForm("email")
+
+	//调用govalidator库 来校验参数是否与规则匹配 规则在定义哪里时制定
+	_, err := govalidator.ValidateStruct(user)
+	if err != nil {
+		fmt.Println(err)
+		c.JSON(200, gin.H{
+			"message": "修改参数不匹配！",
+		})
+		return
+	}
+
 	models.UpdateUser(user)
 	c.JSON(200, gin.H{
 		"message": "更新用户成功",
