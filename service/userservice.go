@@ -23,7 +23,9 @@ func GetUserList(c *gin.Context) {
 	data := make([]*models.UserBasic, 10)
 	data = models.GetUserList()
 	c.JSON(http.StatusOK, gin.H{
-		"message": data,
+		"code":    0, //0表示成功 -1表示失败
+		"message": "获取全部用户成功",
+		"data":    data,
 	})
 }
 
@@ -51,22 +53,29 @@ func CreateUser(c *gin.Context) {
 	data := models.FindUserByName(user.Name)
 	if data.Name != "" {
 		c.JSON(-1, gin.H{
-			"message": "用户名已注册!",
+			"code":    -1, //0表示成功 -1表示失败
+			"message": "用户名已被使用",
+			"data":    data,
 		})
 		return
 	}
 	//判断密码
 	if password != repassword {
 		c.JSON(-1, gin.H{
+			"code":    -1, //0表示成功 -1表示失败
 			"message": "两次密码不一致",
+			"data":    data,
 		})
 		return
 	}
+	user.Salt = salt
 	user.PassWord = utils.MakePassword(password, salt)
 	//去数据库创建用户
 	models.CreateUser(user)
 	c.JSON(200, gin.H{
-		"message": "新增一名用户成功！",
+		"code":    0, //0表示成功 -1表示失败
+		"message": "用户新增成功",
+		"data":    data,
 	})
 }
 
@@ -83,7 +92,9 @@ func DeleteUser(c *gin.Context) {
 	user.ID = uint(id)
 	models.DeleteUser(user)
 	c.JSON(200, gin.H{
-		"message": "删除用户成功",
+		"code":    0, //0表示成功 -1表示失败
+		"message": "用户删除成功",
+		"data":    user,
 	})
 }
 
@@ -113,13 +124,55 @@ func UpdateUser(c *gin.Context) {
 	if err != nil {
 		fmt.Println(err)
 		c.JSON(200, gin.H{
-			"message": "修改参数不匹配！",
+			"code":    -1, //0表示成功 -1表示失败
+			"message": "修改参数不匹配",
+			"data":    user,
 		})
 		return
 	}
 
 	models.UpdateUser(user)
 	c.JSON(200, gin.H{
-		"message": "更新用户成功",
+		"code":    0, //0表示成功 -1表示失败
+		"message": "用户更新成功",
+		"data":    user,
+	})
+}
+
+// FindUserByNameAndPwd
+// @Summary 用户登录
+// @Tags 用户模块
+// @param name query string false "name"
+// @param password query string false "密码"
+// @Success 200 {string} json{"code","message"}
+// @Router /user/findUserByNameAndPwd [post]
+func FindUserByNameAndPwd(c *gin.Context) {
+	user := models.UserBasic{}
+	name := c.Query("name")
+	password := c.Query("password")
+	user = models.FindUserByName(name)
+	if user.Name == "" {
+		c.JSON(200, gin.H{
+			"code":    -1, //0表示成功 -1表示失败
+			"message": "用户不存在",
+			"data":    user,
+		})
+		return
+	}
+	flag := utils.ValidPassword(password, user.Salt, user.PassWord)
+	if !flag {
+		c.JSON(200, gin.H{
+			"code":    -1, //0表示成功 -1表示失败
+			"message": "密码错误",
+			"data":    user,
+		})
+		return
+	}
+	pwd := utils.MakePassword(password, user.Salt)
+	data := models.FindUserByNameAndPwd(name, pwd)
+	c.JSON(200, gin.H{
+		"code":    0, //0表示成功 -1表示失败
+		"message": "用户登录成功",
+		"data":    data,
 	})
 }

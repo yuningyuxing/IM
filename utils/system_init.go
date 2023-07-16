@@ -4,7 +4,9 @@ package utils
 
 //viper库用于处理配置文件的加载和解析
 import (
+	"context"
 	"fmt"
+	"github.com/go-redis/redis/v8"
 	"github.com/spf13/viper"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -14,7 +16,10 @@ import (
 	"time"
 )
 
-var DB *gorm.DB
+var (
+	DB  *gorm.DB
+	Red *redis.Client
+)
 
 // 初始化去取得config文件夹中的app.yml文件中存储的数据库配置
 func InitConfig() {
@@ -49,4 +54,38 @@ func InitMysql() {
 	//gorm.config是gorm库中的一个配置对象 用于设置数据库连接的配置 其中Logger属性被设置为之前创建的newLogger
 	DB, _ = gorm.Open(mysql.Open(viper.GetString("mysql.dns")),
 		&gorm.Config{Logger: newLogger})
+}
+
+func InitRedis() {
+	Red = redis.NewClient(&redis.Options{
+		Addr:         viper.GetString("redis.addr"),
+		Password:     viper.GetString("redis.password"),
+		DB:           viper.GetInt("redis.DB"),
+		PoolSize:     viper.GetInt("redis.poolSize"),
+		MinIdleConns: viper.GetInt("redis.minIdleConn"),
+	})
+}
+
+// 定义发布消息所使用的键名
+const (
+	PublishKet = "websocket"
+)
+
+// Publish向指定频道发布消息
+// ctx是一个上下文对象 channel是频道名 msg是消息内容
+func Publish(ctx context.Context, channel string, msg string) error {
+	fmt.Println("Publish....  ", msg)
+	//使用redis的Publish方法发布消息
+	err := Red.Publish(ctx, channel, msg).Err()
+	return err
+}
+
+// Subscribe订阅指定频道 并返回接受到的消息
+func Subscribe(ctx context.Context, channel string) (string, error) {
+	//使用redis的PSubscribe方法订阅频道
+	sub := Red.PSubscribe(ctx, channel)
+	//接受订阅到的消息
+	msg, err := sub.ReceiveMessage(ctx)
+	fmt.Println("Subscribe.... ", msg.Payload)
+	return msg.Payload, err
 }

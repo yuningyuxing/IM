@@ -2,8 +2,10 @@ package models
 
 //model文件夹用来描述我们要操作的对象
 import (
+	"fmt"
 	"gorm.io/gorm"
 	"main/utils"
+	"time"
 )
 
 // 表示某个用户的信息 用于和数据库关联
@@ -18,7 +20,7 @@ type UserBasic struct {
 	Phone string `valid;"matches(^1[3-9]{1}\\d{9}$)"`
 	//用户邮箱   valid是govalidator库中用来校验邮箱格式是否正确的
 	Email string `valid:"email"`
-	//用户身份?
+	//用户身份  也就是鉴权 token
 	Identity string
 	//用户IP
 	ClientIp string
@@ -83,5 +85,18 @@ func FindUserByPhone(phone string) UserBasic {
 func FindUserByEmail(email string) UserBasic {
 	user := UserBasic{}
 	utils.DB.Where("email = ?", email).First(&user)
+	return user
+}
+
+// 登录用
+func FindUserByNameAndPwd(name string, password string) UserBasic {
+	user := UserBasic{}
+	utils.DB.Where("name = ? and pass_word = ?", name, password).First(&user)
+	//获取当前系统时间
+	str := fmt.Sprintf("%d", time.Now().Unix())
+	//进行MD5加密
+	temp := utils.MD5Encode(str)
+	//然后更新用户的token
+	utils.DB.Model(&user).Where("id = ?", user.ID).Update("identity", temp)
 	return user
 }

@@ -48,6 +48,25 @@ paths:
       summary: 删除用户
       tags:
       - 用户模块
+  /user/findUserByNameAndPwd:
+    post:
+      parameters:
+      - description: name
+        in: query
+        name: name
+        type: string
+      - description: 密码
+        in: query
+        name: password
+        type: string
+      responses:
+        "200":
+          description: code","message"}
+          schema:
+            type: string
+      summary: 用户登录
+      tags:
+      - 用户模块
   /user/getUserList:
     get:
       responses:
