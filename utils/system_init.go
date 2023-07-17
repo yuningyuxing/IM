@@ -64,11 +64,18 @@ func InitRedis() {
 		PoolSize:     viper.GetInt("redis.poolSize"),
 		MinIdleConns: viper.GetInt("redis.minIdleConn"),
 	})
+	//pong, err := Red.Ping(context.Background()).Result()
+	//if err != nil {
+	//	fmt.Println("Redis ping failed:", err)
+	//	return
+	//}
+	//fmt.Println("Redis ping response:", pong)
+
 }
 
-// 定义发布消息所使用的键名
+// 定义发布消息所使用的键名  这里相当于频道名？
 const (
-	PublishKet = "websocket"
+	PublishKey = "websocket"
 )
 
 // Publish向指定频道发布消息
@@ -77,15 +84,22 @@ func Publish(ctx context.Context, channel string, msg string) error {
 	fmt.Println("Publish....  ", msg)
 	//使用redis的Publish方法发布消息
 	err := Red.Publish(ctx, channel, msg).Err()
+	if err != nil {
+		fmt.Println(err)
+	}
 	return err
 }
 
 // Subscribe订阅指定频道 并返回接受到的消息
 func Subscribe(ctx context.Context, channel string) (string, error) {
-	//使用redis的PSubscribe方法订阅频道
-	sub := Red.PSubscribe(ctx, channel)
+	//使用redis的Subscribe方法订阅频道
+	sub := Red.Subscribe(ctx, channel)
 	//接受订阅到的消息
 	msg, err := sub.ReceiveMessage(ctx)
+	if err != nil {
+		fmt.Println(err)
+		return "", err
+	}
 	fmt.Println("Subscribe.... ", msg.Payload)
 	return msg.Payload, err
 }

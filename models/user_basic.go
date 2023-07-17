@@ -40,7 +40,7 @@ type UserBasic struct {
 	DeviceInfo string
 }
 
-// 给实体绑定一个方法
+// 指定在数据库中的表名
 func (table *UserBasic) TableName() string {
 	return "user_basic"
 }

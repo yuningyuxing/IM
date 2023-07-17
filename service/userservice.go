@@ -4,11 +4,14 @@ import (
 	"fmt"
 	"github.com/asaskevich/govalidator"
 	"github.com/gin-gonic/gin"
+	"github.com/gorilla/websocket"
+	"log"
 	"main/models"
 	"main/utils"
 	"math/rand"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 //注意这不是注释  '//@'是用来添加特定地注释 这种注释通常被称为Swagger注解 它们用于为API定义添加元数据和描述
@@ -175,4 +178,59 @@ func FindUserByNameAndPwd(c *gin.Context) {
 		"message": "用户登录成功",
 		"data":    data,
 	})
+}
+
+// 防止跨域站点伪造请求
+// upGrader是一个websocket.Upgrader类型的变量 用于将HTTP连接升级为WebSocket连接
+var upGrader = websocket.Upgrader{
+	//在websocket连接过程中 客户端会发送一个Origin头部字段 用于表示请求来源
+	//checkorigin函数会被调用来检查该来源是否合法
+	//默认情况下checkorigin的函数是nil 既不进行来源检查 允许来自任意来源的连接 为了增加安全性可以自定义checkorigin函数
+	//这里被始终定义为返回true 这代表不进行源检查
+	CheckOrigin: func(r *http.Request) bool {
+		return true
+	},
+}
+
+// 用于处理websocket连接和发送消息
+func SendMsg(c *gin.Context) {
+	//将HTTP连接升级为websocket连接 并获取升级后的websocket连接
+	ws, err := upGrader.Upgrade(c.Writer, c.Request, nil)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	//延迟执行关闭websocket连接的操作
+	//(ws)是传入参数 因为匿名函数无法直接访问外部函数的变量
+	//只有在匿名函数后面加上括号(可以传参)这样他才会执行
+	defer func(ws *websocket.Conn) {
+		err = ws.Close()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}(ws)
+	//调用MsgHandler函数处理接受到的消息
+	MsgHandler(c, ws)
+}
+
+// 用于处理websocket连接的消息
+func MsgHandler(c *gin.Context, ws *websocket.Conn) {
+	//循环 接受redis订阅频道的消息并处理
+	for {
+		//从订阅的频道中接受消息
+		msg, err := utils.Subscribe(c, utils.PublishKey)
+		if err != nil {
+			fmt.Println("MsgHandler 发送失败 ", err)
+		}
+		//获取当前时间并格式化
+		tm := time.Now().Format("2006-01-02 15:04:05")
+		//构造要发送的消息内容
+		m := fmt.Sprintf("[ws][%s]:%s", tm, msg)
+		//fmt.Println(m)
+		//向websocket连接发送消息 消息类型为1
+		err = ws.WriteMessage(1, []byte(m))
+		if err != nil {
+			log.Fatalln(err)
+		}
+	}
 }
