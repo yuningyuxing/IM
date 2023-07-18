@@ -14,7 +14,13 @@ func Router() *gin.Engine {
 	docs.SwaggerInfo.BasePath = ""
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
+	//加载静态资源
+	r.Static("/asset", "asset/")
+	r.LoadHTMLGlob("views/**/*")
+	//首页
+	r.GET("/", service.GetIndex)
 	r.GET("/index", service.GetIndex)
+
 	r.GET("/user/getUserList", service.GetUserList)
 	r.GET("/user/createUser", service.CreateUser)
 	r.GET("/user/deleteUser", service.DeleteUser)

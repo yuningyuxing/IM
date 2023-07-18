@@ -34,12 +34,12 @@
     var app = new Vue({
         el:"#pageapp",
         data:function(){
-            return {
-                user:{
-                    name:"",
-                    password:"",
-                }
-            }
+          return {
+              user:{
+                name:"",
+                password:"",
+              }
+          }
         },
         methods:{
             login:function(){
@@ -53,7 +53,7 @@
                     console.log(res)
                     if(res.code!=0){
                         mui.toast(res.message)
-                    }else{
+                    }else{         
                         var url = "/toChat?userId="+res.data.ID+"&token="+res.data.Identity
                         userInfo(res.data)
                         userId(res.data.ID)
