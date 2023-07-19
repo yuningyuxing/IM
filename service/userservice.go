@@ -46,10 +46,13 @@ func CreateUser(c *gin.Context) {
 	//创建新用户
 	//先创建一个用户模板 然后通过c获取参数
 	user := models.UserBasic{}
-	user.Name = c.Query("name")
-	password := c.Query("password")
-	repassword := c.Query("repassword")
-
+	//POST用FormValue
+	//user.Name = c.Query("name")
+	//password := c.Query("password")
+	//repassword := c.Query("repassword")
+	user.Name = c.Request.FormValue("name")
+	password := c.Request.FormValue("password")
+	repassword := c.Request.FormValue("Identity")
 	//设置盐值 随机数
 	salt := fmt.Sprintf("%06d", rand.Int31())
 
@@ -58,6 +61,15 @@ func CreateUser(c *gin.Context) {
 		c.JSON(-1, gin.H{
 			"code":    -1, //0表示成功 -1表示失败
 			"message": "用户名已被使用",
+			"data":    data,
+		})
+		return
+	}
+
+	if user.Name == "" || password == "" || repassword == "" {
+		c.JSON(-1, gin.H{
+			"code":    -1, //0表示成功 -1表示失败
+			"message": "用户名或密码不能为空",
 			"data":    data,
 		})
 		return
@@ -151,8 +163,11 @@ func UpdateUser(c *gin.Context) {
 // @Router /user/findUserByNameAndPwd [post]
 func FindUserByNameAndPwd(c *gin.Context) {
 	user := models.UserBasic{}
-	name := c.Query("name")
-	password := c.Query("password")
+	//name := c.Query("name")
+	//password := c.Query("password")
+	//注意Request.FormValue可以获取URL和POST表单中的参数 而Query只能获取到URL中的
+	name := c.Request.FormValue("name")
+	password := c.Request.FormValue("password")
 	user = models.FindUserByName(name)
 	if user.Name == "" {
 		c.JSON(200, gin.H{

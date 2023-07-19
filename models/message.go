@@ -19,9 +19,9 @@ type Message struct {
 	FromId int64
 	//接收者
 	TargetId int64
-	//发送类型 群聊 私聊 广播
+	//发送类型 1私聊 2私聊 3广播
 	Type int
-	//消息类型 文字 图片 音频
+	//消息类型 1文字 2表情包 3图片 4音频
 	Media int
 	//消息内容
 	Content string

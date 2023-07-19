@@ -15,15 +15,21 @@ func Router() *gin.Engine {
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler))
 
 	//加载静态资源
+	//设置静态文件目录映射
 	r.Static("/asset", "asset/")
+	//加载HTML模板文件
+	// 这样，在使用模板引擎渲染页面时，可以直接通过模板文件的相对路径引用模板，而不需要指定完整的文件路径。
+	// 例如，使用{{ template "subdir/template.html" . }}可以引用"views/subdir/template.html"文件作为模板
 	r.LoadHTMLGlob("views/**/*")
 	//首页
 	r.GET("/", service.GetIndex)
 	r.GET("/index", service.GetIndex)
+	r.GET("/toRegister", service.ToRegister)
 
-	r.GET("/user/getUserList", service.GetUserList)
-	r.GET("/user/createUser", service.CreateUser)
-	r.GET("/user/deleteUser", service.DeleteUser)
+	//用户模块
+	r.POST("/user/getUserList", service.GetUserList)
+	r.POST("/user/createUser", service.CreateUser)
+	r.POST("/user/deleteUser", service.DeleteUser)
 	r.POST("/user/updateUser", service.UpdateUser)
 	r.POST("/user/findUserByNameAndPwd", service.FindUserByNameAndPwd)
 	//发送消息
