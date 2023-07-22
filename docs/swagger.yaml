@@ -34,10 +34,10 @@ paths:
       tags:
       - 用户模块
   /user/deleteUser:
-    get:
+    post:
       parameters:
       - description: id
-        in: query
+        in: formData
         name: id
         type: string
       responses:

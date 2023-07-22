@@ -68,7 +68,7 @@ const docTemplate = `{
             }
         },
         "/user/deleteUser": {
-            "get": {
+            "post": {
                 "tags": [
                     "用户模块"
                 ],
@@ -78,7 +78,7 @@ const docTemplate = `{
                         "type": "string",
                         "description": "id",
                         "name": "id",
-                        "in": "query"
+                        "in": "formData"
                     }
                 ],
                 "responses": {

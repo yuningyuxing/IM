@@ -37,9 +37,9 @@ func GetUserList(c *gin.Context) {
 // CreateUser
 // @Summary 新增用户
 // @Tags 用户模块
-// @param name query string false "用户名"
-// @param password query string false "密码"
-// @param repassword query string false "确认密码"
+// @param name formData string false "用户名"
+// @param password formData string false "密码"
+// @param repassword formData string false "确认密码"
 // @Success 200 {string} json{"code","message"}
 // @Router /user/createUser [get]
 func CreateUser(c *gin.Context) {
@@ -97,13 +97,14 @@ func CreateUser(c *gin.Context) {
 // DeleteUser
 // @Summary 删除用户
 // @Tags 用户模块
-// @param id query string false "id"
+// @param id formData string false "id"
 // @Success 200 {string} json{"code","message"}
-// @Router /user/deleteUser [get]
+// @Router /user/deleteUser [POST]
 func DeleteUser(c *gin.Context) {
 	//删除用户  根据ID
 	user := models.UserBasic{}
-	id, _ := strconv.Atoi(c.Query("id"))
+	id, _ := strconv.Atoi(c.PostForm("id"))
+	fmt.Println(id)
 	user.ID = uint(id)
 	models.DeleteUser(user)
 	c.JSON(200, gin.H{
@@ -252,4 +253,11 @@ func MsgHandler(c *gin.Context, ws *websocket.Conn) {
 
 func SendUserMsg(c *gin.Context) {
 	models.Chat(c.Writer, c.Request)
+}
+
+// 查询好友列表
+func SearchFriends(c *gin.Context) {
+	userId, _ := strconv.Atoi(c.Request.FormValue("userId"))
+	users := models.SearchFriends(uint(userId))
+	utils.RespOKList(c.Writer, users, len(users))
 }
