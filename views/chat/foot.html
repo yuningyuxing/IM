@@ -2,6 +2,7 @@
 <script>
 
     function upload(dom) {
+        //这里是当我请求上传图片时 会发送这个请求 并且当响应值为0时 我会调用sendpicmsg 然后根据res中的URL 会自动生成一条get 请求来显示图片
         uploadfile("attach/upload", dom, function (res) {
             if (res.Code == 0) {
                 app.sendpicmsg(res.Data)

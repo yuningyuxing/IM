@@ -23,7 +23,7 @@ type Message struct {
 	TargetId int64
 	//发送类型 1私聊 2私聊 3广播
 	Type int
-	//消息类型 1文字 2表情包 3图片 4音频
+	//消息类型 1文字 2表情包 3音频 4图片
 	Media int
 	//消息内容
 	Content string
@@ -109,6 +109,7 @@ func sendProc(node *Node) {
 		select {
 		//它从dataQueue通道中接受待发送的消息 并将其通过websocket连接发送出去
 		case data := <-node.DataQueue:
+
 			//这句代码用于向websocket连接写入消息
 			//第一个参数表示消息类型 这里是文本类型 第二个参数是消息内容
 			//注意这里是给websocket那一端发送消息
@@ -134,7 +135,7 @@ func recvProc(node *Node) {
 		//将接受到的消息传给broadMsg函数处理 这个函数的作用是将消息广播给它相关客户端
 		broadMsg(data)
 		//打印消息
-		fmt.Println("[ws]<<<<<", data)
+		fmt.Println("[ws]<<<<<", string(data))
 	}
 }
 
@@ -143,7 +144,6 @@ var udpsendChan chan []byte = make(chan []byte, 1024)
 
 // 将信息写入UDP管道
 func broadMsg(data []byte) {
-	fmt.Println("2")
 	udpsendChan <- data
 }
 
@@ -203,6 +203,7 @@ func udpRecvProc() {
 			fmt.Println(err)
 			return
 		}
+		fmt.Println("eeee")
 		//调用该函数 将接受到的数据传递给他进行处理
 		dispatch(buf[0:n])
 	}

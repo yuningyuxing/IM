@@ -53,3 +53,7 @@ func ToChat(c *gin.Context) {
 	user.Identity = token
 	ind.Execute(c.Writer, user)
 }
+
+func Chat(c *gin.Context) {
+	models.Chat(c.Writer, c.Request)
+}
