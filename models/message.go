@@ -1,5 +1,7 @@
 package models
 
+//用户A发消息给B
+//A先通过websocket 给服务器  服务器对消息分类处理 然后通过UDP广播 给B  B通过UDP监听拿到消息后 分类 然后给websocket  websocket给前端页面
 import (
 	"encoding/json"
 	"fmt"
@@ -96,7 +98,6 @@ func Chat(writer http.ResponseWriter, request *http.Request) {
 	go sendProc(node)
 	//完成接受逻辑
 	go recvProc(node)
-
 	sendMsg(userId, []byte("欢迎进入聊天系统"))
 }
 

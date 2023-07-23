@@ -210,6 +210,7 @@ var upGrader = websocket.Upgrader{
 
 // 用于处理websocket连接和发送消息
 func SendMsg(c *gin.Context) {
+	fmt.Println("2")
 	//将HTTP连接升级为websocket连接 并获取升级后的websocket连接
 	ws, err := upGrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
@@ -252,6 +253,7 @@ func MsgHandler(c *gin.Context, ws *websocket.Conn) {
 }
 
 func SendUserMsg(c *gin.Context) {
+	fmt.Println("1")
 	models.Chat(c.Writer, c.Request)
 }
 

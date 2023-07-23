@@ -1,7 +1,6 @@
 package service
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"html/template"
 	"main/models"
@@ -34,7 +33,6 @@ func ToRegister(c *gin.Context) {
 }
 
 func ToChat(c *gin.Context) {
-	fmt.Println("xxx")
 	ind, err := template.ParseFiles("views/chat/index.html",
 		"views/chat/head.html",
 		"views/chat/foot.html",
