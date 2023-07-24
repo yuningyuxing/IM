@@ -1,5 +1,6 @@
 package models
 
+//这个没用到
 import "gorm.io/gorm"
 
 // 群信息

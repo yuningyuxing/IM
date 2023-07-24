@@ -88,6 +88,13 @@ func FindUserByEmail(email string) UserBasic {
 	return user
 }
 
+// 通过ID查找用户
+func FindByID(id uint) UserBasic {
+	user := UserBasic{}
+	utils.DB.Where("id = ?", id).First(&user)
+	return user
+}
+
 // 登录用
 func FindUserByNameAndPwd(name string, password string) UserBasic {
 	user := UserBasic{}

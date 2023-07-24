@@ -13,7 +13,7 @@ type Contact struct {
 	OwnerId uint
 	//对应的是谁
 	TargetId uint
-	//关系类型 0 1 3   1代表好友
+	//关系类型 1 2 3   1代表好友 2群
 	Type int
 	//预留字段
 	Desc string
@@ -41,4 +41,55 @@ func SearchFriends(userId uint) []UserBasic {
 	users := make([]UserBasic, 0)
 	utils.DB.Where("id in ?", objIds).Find(&users)
 	return users
+}
+
+// 新增好友  这里1添加2时 自动将2添加1
+func AddFriend(userId uint, targetName string) (int, string) {
+	//通过名字找到要加的那个人
+	user := FindUserByName(targetName)
+	//不能加自己
+	if userId == user.ID {
+		return -1, "别加自己"
+	}
+	contact := Contact{}
+	//查询是否关系已经存在 如果存在不能重复添加
+	utils.DB.Where("owner_id=? and target_id=? and type = 1", userId, user.ID).Find(&contact)
+	if contact.ID != 0 {
+		return -1, "无法重复添加"
+	}
+	//可以正常添加
+	if user.Name != "" {
+		//开启一个事务 用于确保我插入两条数据时的数据一致性
+		tx := utils.DB.Begin()
+		contact1 := Contact{}
+		contact2 := Contact{}
+		contact1.OwnerId = userId
+		contact1.TargetId = user.ID
+		contact1.Type = 1
+		contact2.OwnerId = user.ID
+		contact2.TargetId = userId
+		contact2.Type = 2
+
+		err := tx.Create(&contact1).Error
+		//发送错误 回滚事务
+		if err != nil {
+			tx.Rollback()
+			fmt.Println("Failed to addfriend first", err)
+			return -1, "数据库操作出错"
+		}
+		err = tx.Create(&contact2).Error
+		if err != nil {
+			tx.Rollback()
+			fmt.Println("Failed to addfriend second", err)
+			return -1, "数据库操作出错"
+		}
+		//提交事务 将操作永久化在数据库
+		err = tx.Commit().Error
+		if err != nil {
+			fmt.Println("Failed to addfriend commit tx", err)
+			return -1, "数据库出错"
+		}
+		return 0, "添加成功"
+	}
+	return -1, "对方不存在"
 }

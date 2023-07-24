@@ -47,11 +47,15 @@
                 },
                 webSocket: {},
                 win: "main",
+                //这里前端保存群信息
                 com: {
                     "ownerId": "",
+                    //图标
                     "icon": "",
+                    //分类
                     "cate": "",
                     "name": "",
+                    //群介绍 备注
                     "memo": "",
                 },
                 //用户信息
@@ -599,6 +603,7 @@
                         this.setTimeFlag();
                         var that = this;
                         console.log(that);
+                        //这里comId就代表群名称
                         post("contact/joinGroup", { comId: dstobj, "userId": userId() }, function (res) {
                             if (res.Code == 0) {
                                 mui.toast("添加成功");
@@ -612,7 +617,7 @@
                 },
                 joincom: function () {
                     var that = this;
-                    mui.prompt('', '请输入群号或者群名称', '加群', ['取消', '确认'], function (e) {
+                    mui.prompt('', '请输入群名称', '加群', ['取消', '确认'], function (e) {
                         if (e.index == 1) {
                             //    if (isNaN(e.value) || e.value <= 0) {
                             //       mui.toast('格式错误');

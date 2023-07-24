@@ -210,7 +210,6 @@ var upGrader = websocket.Upgrader{
 
 // 用于处理websocket连接和发送消息
 func SendMsg(c *gin.Context) {
-	fmt.Println("2")
 	//将HTTP连接升级为websocket连接 并获取升级后的websocket连接
 	ws, err := upGrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
@@ -253,7 +252,6 @@ func MsgHandler(c *gin.Context, ws *websocket.Conn) {
 }
 
 func SendUserMsg(c *gin.Context) {
-	fmt.Println("1")
 	models.Chat(c.Writer, c.Request)
 }
 
@@ -262,4 +260,54 @@ func SearchFriends(c *gin.Context) {
 	userId, _ := strconv.Atoi(c.Request.FormValue("userId"))
 	users := models.SearchFriends(uint(userId))
 	utils.RespOKList(c.Writer, users, len(users))
+}
+
+// 添加好友
+func AddFriend(c *gin.Context) {
+	userId, _ := strconv.Atoi(c.Request.FormValue("userId"))
+	targetName := c.Request.FormValue("targetName")
+	code, msg := models.AddFriend(uint(userId), targetName)
+	if code == 0 {
+		utils.RespOK(c.Writer, code, msg)
+	} else {
+		utils.RespFail(c.Writer, msg)
+	}
+}
+
+// 创建群
+func CreateCommunity(c *gin.Context) {
+	community := models.Community{}
+	community.Name = c.Request.PostFormValue("name")
+	ownerId, _ := strconv.Atoi(c.Request.PostFormValue("ownerId"))
+	community.OwnerId = uint(ownerId)
+	code, msg := models.CreatCommunity(community)
+	if code == 0 {
+		utils.RespOK(c.Writer, code, msg)
+	} else {
+		utils.RespFail(c.Writer, msg)
+	}
+}
+
+// 加载群列表
+func LoadCommunity(c *gin.Context) {
+	ownerId, _ := strconv.Atoi(c.Request.PostFormValue("ownerId"))
+	data, msg := models.LoadCommunity(uint(ownerId))
+	if len(data) != 0 {
+		utils.RespOKList(c.Writer, data, len(data))
+	} else {
+		utils.RespFail(c.Writer, msg)
+	}
+
+}
+
+func JoinGroup(c *gin.Context) {
+	userId, _ := strconv.Atoi(c.Request.FormValue("userId"))
+	groupName := c.Request.FormValue("comId")
+	code, msg := models.JoinGroup(uint(userId), groupName)
+	if code == 0 {
+		utils.RespOK(c.Writer, code, msg)
+	} else {
+		utils.RespFail(c.Writer, msg)
+	}
+
 }
