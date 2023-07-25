@@ -38,6 +38,7 @@ func Router() *gin.Engine {
 	r.POST("/user/deleteUser", service.DeleteUser)
 	r.POST("/user/updateUser", service.UpdateUser)
 	r.POST("/user/findUserByNameAndPwd", service.FindUserByNameAndPwd)
+	r.POST("/user/find", service.FindByID)
 
 	//发送消息
 	r.GET("/user/sendMsg", service.SendMsg)
@@ -50,6 +51,7 @@ func Router() *gin.Engine {
 	r.POST("/contact/createCommunity", service.CreateCommunity)
 	//加群
 	r.POST("/contact/joinGroup", service.JoinGroup)
-
+	//加载消息缓存
+	r.POST("/user/redisMsg", service.RedisMsg)
 	return r
 }

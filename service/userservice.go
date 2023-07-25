@@ -229,6 +229,16 @@ func SendMsg(c *gin.Context) {
 	MsgHandler(c, ws)
 }
 
+func RedisMsg(c *gin.Context) {
+	userIdA, _ := strconv.Atoi(c.PostForm("userIdA"))
+	userIdB, _ := strconv.Atoi(c.PostForm("userIdB"))
+	start, _ := strconv.Atoi(c.PostForm("start"))
+	end, _ := strconv.Atoi(c.PostForm("end"))
+	isRev, _ := strconv.ParseBool(c.PostForm("isRev"))
+	res := models.RedisMsg(int64(userIdA), int64(userIdB), int64(start), int64(end), isRev)
+	utils.RespOKList(c.Writer, "ok", res)
+}
+
 // 用于处理websocket连接的消息
 func MsgHandler(c *gin.Context, ws *websocket.Conn) {
 	//循环 接受redis订阅频道的消息并处理
@@ -309,5 +319,10 @@ func JoinGroup(c *gin.Context) {
 	} else {
 		utils.RespFail(c.Writer, msg)
 	}
+}
 
+func FindByID(c *gin.Context) {
+	userId, _ := strconv.Atoi(c.Request.FormValue("userId"))
+	data := models.FindByID(uint(userId))
+	utils.RespOK(c.Writer, data, "ok")
 }
