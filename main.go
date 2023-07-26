@@ -8,8 +8,9 @@ import (
 	"time"
 )
 
-// 初始化定时器
+// 初始化定时器  定时器的作用是定时清理超时连接
 func InitTimer() {
+	//给写好的定时器传入参数
 	utils.Timer(
 		time.Duration(viper.GetInt("timeout.DelayHeartbeat"))*time.Second,
 		time.Duration(viper.GetInt("timeout.HeartbeatHz"))*time.Second,

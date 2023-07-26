@@ -105,12 +105,14 @@ func Chat(writer http.ResponseWriter, request *http.Request) {
 	currentTime := uint64(time.Now().Unix())
 	//声明一个连接示例 并初始化一些参数
 	node := &Node{
-		Conn:          conn,
-		Addr:          conn.RemoteAddr().String(),
+		Conn: conn,
+		Addr: conn.RemoteAddr().String(),
+		//初始化心跳时间
 		HeartbeatTime: currentTime,
-		LoginTime:     currentTime,
-		DataQueue:     make(chan []byte, 50),
-		GroupSets:     set.New(set.ThreadSafe),
+		//初始化登录时间
+		LoginTime: currentTime,
+		DataQueue: make(chan []byte, 50),
+		GroupSets: set.New(set.ThreadSafe),
 	}
 	//上锁  这里是写入锁
 	rwLocker.Lock()
@@ -168,11 +170,12 @@ func recvProc(node *Node) {
 		if msg.Type == 3 {
 			//这里更新用户心跳
 			currentTime := uint64(time.Now().Unix())
+			//此函数用来更新用户心跳
 			node.Heartbeat(currentTime)
 		} else {
 			dispatch(data)
 			//将消息广播到局域网
-			broadMsg(data)
+			//broadMsg(data)
 			fmt.Println("[ws] recvProc <<<<", string(data))
 		}
 	}
@@ -264,17 +267,19 @@ func dispatch(data []byte) {
 	case 1: //私信
 		//第一个参数是目标用户和消息类型
 		sendMsg(msg.TargetId, data)
-	case 2:
+	case 2: //群发
 		sendGroupMsg(msg.TargetId, data)
-		//更新心跳
-	case 3:
-		sendMsg(msg.TargetId, data)
+		//case 3: //更新心跳
 	}
 }
+
+// 第一个参数就表示群ID
 func sendGroupMsg(targetId int64, msg []byte) {
 	fmt.Println("开始群发消息")
+	//找到所有群成员
 	userIds := SearchUserByGroupId(uint(targetId))
 	for i := 0; i < len(userIds); i++ {
+		//注意这里排除自己
 		if targetId != int64(userIds[i]) {
 			sendMsg(int64(userIds[i]), msg)
 		}
@@ -293,31 +298,46 @@ func sendMsg(userId int64, msg []byte) {
 	//将消息反序列化
 	jsonMsg := Message{}
 	json.Unmarshal(msg, &jsonMsg)
+	//创建一个空的上下文
 	ctx := context.Background()
+	//获得接收者的ID 并转化为字符串
 	targetIdStr := strconv.Itoa(int(userId))
+	//将发送者的ID 转化为字符串
 	userIdStr := strconv.Itoa(int(jsonMsg.UserId))
+	//将消息的创建时间设置为当前
 	jsonMsg.CreateTime = uint64(time.Now().Unix())
-	r, err := utils.Red.Get(ctx, "online_"+userIdStr).Result()
+	//获取接受者用户的在线信息  根据我们刚获得的ID  .Result()的作用是获得redis命令的返回值和错误
+	r, err := utils.Red.Get(ctx, "online_"+targetIdStr).Result()
 	if err != nil {
 		fmt.Println("redis get fail err=", err)
 		return
 	}
+	//如果接收者在线 则发送消息给接收者
 	if r != "" && ok {
 		fmt.Println("sendMsg>>>userID: ", userId, " msg:", string(msg))
 		node.DataQueue <- msg
 	}
+	//之后我们将消息缓存到redis中
+	//我们将两个人的消息都缓存在一个有序集合中 然后根据消息的结构体来是谁发谁的即可  score可以代表顺序
+	//确定存储消息的redis键名
 	var key string
+	//我们这里将ID小的人放前面
 	if userId > jsonMsg.UserId {
 		key = "msg_" + userIdStr + "_" + targetIdStr
 	} else {
 		key = "msg_" + targetIdStr + "_" + userIdStr
 	}
+	//在redis中这里获取指定键名的有序集合中的所有元素  这里start stop表示从第一个元素开始到最后一个元素
+	//有序集合中依靠一个score分数排序
 	res, err := utils.Red.ZRevRange(ctx, key, 0, -1).Result()
 	if err != nil {
 		fmt.Println("redis zrevrange fail err=", err)
 		return
 	}
+	//指定一个分数 以便将新构造的消息加入有序集合
+	//新分数为集合容量+1
 	score := float64(cap(res)) + 1
+	//在指定的有序集合加入新消息
 	ress, err := utils.Red.ZAdd(ctx, key, &redis.Z{score, msg}).Result()
 	if err != nil {
 		println("redis zadd fail err=", err)
@@ -325,27 +345,42 @@ func sendMsg(userId int64, msg []byte) {
 	}
 	fmt.Println(ress)
 }
+
+// 重写该方法 来使消息得以序列化
 func (msg Message) MarshalBinary() ([]byte, error) {
 	return json.Marshal(msg)
 }
 
 // 获取缓存里的消息
+// 参数userIdA和userIdB表示获取谁和谁的信息
+// start和end表示需要获取的消息记录的范围
+// isRev是一个布尔值 表示是否按照时间倒序获取消息
+// 返回一个字符串切片 包含的就是消息记录
 func RedisMsg(userIdA int64, userIdB int64, start int64, end int64, isRev bool) []string {
+	//创建一个上下文 用于在redis操作中传递上下文信息
 	ctx := context.Background()
+	//将两个人的Id转化为字符串
 	userIdStr := strconv.Itoa(int(userIdA))
 	targetIdStr := strconv.Itoa(int(userIdB))
+	//拿到我们存储缓存信息的键值 就是两个人的ID一起 小的在前面
 	var key string
 	if userIdA > userIdB {
 		key = "msg_" + targetIdStr + "_" + userIdStr
 	} else {
 		key = "msg_" + userIdStr + "_" + targetIdStr
 	}
+	//用于存储消息的字符串切片
 	var rels []string
 	var err error
+	//看看要不要倒序  这里score就表示时间
 	if isRev {
+		//这里是按照score从小到大的顺序获取信息
+		//也就是遍历字符串的时候 是老信息在前面
 		rels, err = utils.Red.ZRange(ctx, key, start, end).Result()
 	} else {
-		rels, err = utils.Red.ZRevRange(ctx, key, start, end).Result()
+		//这里是按照从大到小的顺序
+		//这里就是新信息在前面
+		rels, err = utils.Red.ZRange(ctx, key, start, end).Result()
 	}
 	if err != nil {
 		fmt.Println("redisMsg find fail err=", err)
@@ -353,6 +388,7 @@ func RedisMsg(userIdA int64, userIdB int64, start int64, end int64, isRev bool) 
 	return rels
 }
 
+// 更新心跳时间的函数
 func (node *Node) Heartbeat(currentTime uint64) {
 	node.HeartbeatTime = currentTime
 }
@@ -360,14 +396,18 @@ func (node *Node) Heartbeat(currentTime uint64) {
 // 清理超时连接
 func CleanConnection(param interface{}) (result bool) {
 	result = true
+	//捕获异常
 	defer func() {
 		if err := recover(); err != nil {
 			fmt.Println("cleanConnection err=", err)
 		}
 	}()
+	//获取当前时间
 	currentTime := uint64(time.Now().Unix())
+	//遍历所有的websocket连接
 	for i := range clientMap {
 		node := clientMap[i]
+		//根据写的判断函数 判断是否超时
 		if node.IsHeartbeatTimeOut(currentTime) {
 			fmt.Println("心跳超时 连接关闭：", node)
 			node.Conn.Close()
@@ -377,6 +417,7 @@ func CleanConnection(param interface{}) (result bool) {
 }
 
 // 判断用户心跳是否超时
+// 这里就是node的上次心跳时间+最大心跳时间 如果小于等于当前时间 就表示隔的太久了 让他下线
 func (node *Node) IsHeartbeatTimeOut(currentTime uint64) (timeout bool) {
 	if node.HeartbeatTime+viper.GetUint64("timeout.HeartbeatMaxTime") <= currentTime {
 		fmt.Println("心跳超时，自动下线", node)

@@ -87,11 +87,7 @@ func CreateUser(c *gin.Context) {
 	user.PassWord = utils.MakePassword(password, salt)
 	//去数据库创建用户
 	models.CreateUser(user)
-	c.JSON(200, gin.H{
-		"code":    0, //0表示成功 -1表示失败
-		"message": "用户新增成功",
-		"data":    data,
-	})
+	utils.RespOK(c.Writer, data, "创建成功")
 }
 
 // DeleteUser
@@ -229,6 +225,7 @@ func SendMsg(c *gin.Context) {
 	MsgHandler(c, ws)
 }
 
+// 加载用户的缓存
 func RedisMsg(c *gin.Context) {
 	userIdA, _ := strconv.Atoi(c.PostForm("userIdA"))
 	userIdB, _ := strconv.Atoi(c.PostForm("userIdB"))
@@ -310,6 +307,7 @@ func LoadCommunity(c *gin.Context) {
 
 }
 
+// 加群
 func JoinGroup(c *gin.Context) {
 	userId, _ := strconv.Atoi(c.Request.FormValue("userId"))
 	groupName := c.Request.FormValue("comId")
@@ -321,6 +319,7 @@ func JoinGroup(c *gin.Context) {
 	}
 }
 
+// 根据ID找到用户
 func FindByID(c *gin.Context) {
 	userId, _ := strconv.Atoi(c.Request.FormValue("userId"))
 	data := models.FindByID(uint(userId))
